@@ -1,5 +1,5 @@
 import { HandCashConnect } from '@handcash/handcash-connect';
-import { handCashConnect } from "../config/handcash";
+import { handCashMinter } from "../config/handcash-minter";
 
 export interface ItemProps {
   name: string;
@@ -8,83 +8,73 @@ export interface ItemProps {
   tokenSupply: number;
 }
 
-class HandCashCloudService {
+class HandCashMinterService {
   private account: any;
-  private baseApiEndpoint = 'https://cloud.handcash.io';
 
-  constructor(authToken: string) {
-    this.account = handCashConnect.getAccountFromAuthToken(authToken);
-  }
-
-  private async sendRequest(method: string, endpoint: string, body?: any) {
-    const appId = process.env.VITE_HANDCASH_APP_ID!;
-    const appSecret = process.env.VITE_HANDCASH_APP_SECRET!;
-
-    const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'App-Id': appId,
-      'App-Secret': appSecret,
-    };
-
-    const response = await fetch(`${this.baseApiEndpoint}${endpoint}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('HandCash API error:', errorText);
-      throw new Error(`HandCash API error: ${response.statusText}`);
+  constructor() {
+    if (!process.env.HANDCASH_MINTER_AUTH_TOKEN) {
+      throw new Error('Missing minter auth token');
     }
-
-    return response.json();
+    this.account = handCashMinter.getAccountFromAuthToken(process.env.HANDCASH_MINTER_AUTH_TOKEN);
   }
 
   async createItemsOrder(items: any[]) {
-    return this.sendRequest('POST', '/v3/itemCreationOrder', {
-      items
-    });
+    try {
+      return await this.account.items.createItemsOrder({ items });
+    } catch (error) {
+      console.error('Error creating items order:', error);
+      throw error;
+    }
   }
 
   async getItemOrder(orderId: string) {
-    return this.sendRequest('GET', `/v3/itemCreationOrder/${orderId}`);
+    try {
+      return await this.account.items.getItemOrder(orderId);
+    } catch (error) {
+      console.error('Error getting item order:', error);
+      throw error;
+    }
   }
 
   async getUserItems() {
-    return this.sendRequest('GET', '/v3/items');
+    try {
+      return await this.account.items.getUserItems();
+    } catch (error) {
+      console.error('Error getting user items:', error);
+      throw error;
+    }
   }
 }
 
 export async function mintItem(authToken: string, item: ItemProps) {
   try {
-    const cloudService = new HandCashCloudService(authToken);
+    const minterService = new HandCashMinterService();
 
     // Create the item order with proper metadata structure
-    const createItemResponse = await cloudService.createItemsOrder([{
-      tokenSymbol: item.name.toUpperCase().replace(/\s+/g, '_'),
+    const createItemResponse = await minterService.createItemsOrder([{
       name: item.name,
       description: item.description,
+      rarity: "Common",
+      attributes: [
+        { name: "Edition", value: "Test", displayType: "string" },
+        { name: "Generation", value: "1", displayType: "string" }
+      ],
       mediaDetails: {
         image: {
           url: item.imageUrl,
           contentType: 'image/png'
         }
       },
-      rarity: "Common",
-      attributes: [
-        { name: "Edition", value: "Test", displayType: "string" },
-        { name: "Generation", value: "1", displayType: "string" }
-      ],
-      quantity: item.tokenSupply
+      quantity: item.tokenSupply,
     }]);
 
+    console.log('Item creation order response:', createItemResponse);
+
     // Wait for the order to be processed
-    let orderStatus = await cloudService.getItemOrder(createItemResponse.id);
+    let orderStatus = await minterService.getItemOrder(createItemResponse.id);
     while (orderStatus.status !== 'completed') {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      orderStatus = await cloudService.getItemOrder(createItemResponse.id);
+      orderStatus = await minterService.getItemOrder(createItemResponse.id);
     }
 
     return orderStatus.items[0];
@@ -96,8 +86,8 @@ export async function mintItem(authToken: string, item: ItemProps) {
 
 export async function getUserItems(authToken: string) {
   try {
-    const cloudService = new HandCashCloudService(authToken);
-    const response = await cloudService.getUserItems();
+    const minterService = new HandCashMinterService();
+    const response = await minterService.getUserItems();
     return response.items;
   } catch (error) {
     console.error('Error fetching user items:', error);
