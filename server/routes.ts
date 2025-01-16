@@ -4,7 +4,13 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { handCashConnect } from "./config/handcash";
 import { db } from "@db";
-import { users, paymentRequests, webhookEvents, items, collections } from "@db/schema";
+import {
+  users,
+  paymentRequests,
+  webhookEvents,
+  items,
+  collections,
+} from "@db/schema";
 import { eq } from "drizzle-orm";
 import { mintItem, getUserItems } from "./services/handcash-items";
 
@@ -229,16 +235,20 @@ export function registerRoutes(app: Express): Server {
       const account = handCashConnect.getAccountFromAuthToken(authToken);
       const profile = await account.profile.getCurrentProfile();
 
-      // Store or update user in database
+      // Store or update user in database with HandCash ID
       await db
         .insert(users)
         .values({
           handle: profile.publicProfile.handle,
+          handcashId: profile.publicProfile.id, // Store HandCash ID
           authToken: authToken,
         })
         .onConflictDoUpdate({
           target: users.handle,
-          set: { authToken },
+          set: {
+            authToken,
+            handcashId: profile.publicProfile.id, // Update HandCash ID on conflict
+          },
         });
 
       req.session.authToken = authToken;
@@ -268,12 +278,16 @@ export function registerRoutes(app: Express): Server {
       const { name, description, imageUrl, tokenSupply } = req.body;
 
       // Mint the item using HandCash with user's handle
-      const mintedItem = await mintItem(authToken, {
-        name,
-        description,
-        imageUrl,
-        tokenSupply,
-      }, user.handle);
+      const mintedItem = await mintItem(
+        authToken,
+        {
+          name,
+          description,
+          imageUrl,
+          tokenSupply,
+        },
+        user.id,
+      );
 
       // Store the item in our database
       const [savedItem] = await db

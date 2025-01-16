@@ -5,6 +5,7 @@ import { relations } from "drizzle-orm";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   handle: text("handle").unique().notNull(),
+  handcashId: text("handcash_id").unique(), // Make it nullable initially
   authToken: text("auth_token").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -3,6 +3,7 @@ import { HandCashMinter } from "@handcash/handcash-connect";
 import { db } from "@db";
 import { collections, items } from "@db/schema";
 import { eq } from "drizzle-orm";
+import { userInfo } from "os";
 
 export interface ItemProps {
   name: string;
@@ -132,7 +133,7 @@ async function getOrCreateCollection() {
   return savedCollection;
 }
 
-export async function mintItem(authToken: string, item: ItemProps) {
+export async function mintItem(authToken: string, item: ItemProps, user: string) {
   try {
     const minterService = new HandCashMinterService();
 
@@ -144,6 +145,7 @@ export async function mintItem(authToken: string, item: ItemProps) {
       collectionId: collection.handcashCollectionId,
       items: [
         {
+          user: user,
           name: item.name,
           description: item.description,
           rarity: "Common",
@@ -175,7 +177,7 @@ export async function mintItem(authToken: string, item: ItemProps) {
       console.log("Updated order status:", orderStatus);
     }
 
-    const createdItem = orderStatus[0];
+    const createdItem = orderStatus.items[0];
     return {
       ...createdItem,
       collectionId: collection.id,
