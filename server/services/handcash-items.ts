@@ -11,13 +11,17 @@ export interface ItemProps {
   tokenSupply: number;
 }
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class HandCashMinterService {
   private account: any;
 
   constructor() {
-    if (!process.env.HANDCASH_MINTER_APP_ID || !process.env.HANDCASH_MINTER_APP_SECRET || !process.env.HANDCASH_MINTER_AUTH_TOKEN) {
+    if (
+      !process.env.HANDCASH_MINTER_APP_ID ||
+      !process.env.HANDCASH_MINTER_APP_SECRET ||
+      !process.env.HANDCASH_MINTER_AUTH_TOKEN
+    ) {
       throw new Error("Missing minting credentials");
     }
     this.account = HandCashMinter.fromAppCredentials({
@@ -38,7 +42,7 @@ class HandCashMinterService {
 
   async getOrderItems(orderId: string) {
     try {
-      return await this.account.getCreateItemsOrder(orderId);
+      return await this.account.getOrderItems(orderId);
     } catch (error) {
       console.error("Error getting order items:", error);
       throw error;
@@ -91,29 +95,39 @@ async function getOrCreateCollection() {
       image: {
         url: "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
         contentType: "image/png",
-      },
-      banner: {
-        url: "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
-        contentType: "image/png",
       }
-    },
-    items: []
+    }
   };
 
-  // Create collection
+  console.log("Creating collection with params:", collection);
+
+  // Create collection order
   const creationOrder = await minterService.createCollectionOrder(collection);
+  console.log("Collection creation order:", creationOrder);
 
   // Wait for collection to be created in the background
   await sleep(5000);
-  const createdCollection = await minterService.getOrderItems(creationOrder.id);
+  const orderItems = await minterService.getOrderItems(creationOrder.id);
+  console.log("Collection order items:", orderItems);
+
+  // The first item in the response is our collection
+  const createdCollection = orderItems[0];
+  console.log("Created collection:", createdCollection);
+
+  if (!createdCollection || !createdCollection.id) {
+    throw new Error("Failed to create collection: No collection ID received");
+  }
 
   // Store collection in database
-  const [savedCollection] = await db.insert(collections).values({
-    handcashCollectionId: createdCollection.id,
-    name: collection.name,
-    description: collection.description,
-    imageUrl: collection.mediaDetails.image.url,
-  }).returning();
+  const [savedCollection] = await db
+    .insert(collections)
+    .values({
+      handcashCollectionId: createdCollection.id,
+      name: collection.name,
+      description: collection.description,
+      imageUrl: collection.mediaDetails.image.url,
+    })
+    .returning();
 
   return savedCollection;
 }
@@ -128,39 +142,46 @@ export async function mintItem(authToken: string, item: ItemProps) {
     // Create the item order with proper metadata structure
     const createItemResponse = await minterService.createItemsOrder({
       collectionId: collection.handcashCollectionId,
-      items: [{
-        name: item.name,
-        description: item.description,
-        rarity: "Common",
-        attributes: [
-          { name: "Edition", value: "Test", displayType: "string" },
-          { name: "Generation", value: "1", displayType: "string" },
-        ],
-        mediaDetails: {
-          image: {
-            url: item.imageUrl,
-            contentType: "image/png",
+      items: [
+        {
+          name: item.name,
+          description: item.description,
+          rarity: "Common",
+          attributes: [
+            { name: "Edition", value: "Test", displayType: "string" },
+            { name: "Generation", value: "1", displayType: "string" },
+          ],
+          mediaDetails: {
+            image: {
+              url: item.imageUrl,
+              contentType: "image/png",
+            },
+            thumbnail: {
+              url: item.imageUrl,
+              contentType: "image/png",
+            },
           },
-          thumbnail: {
-            url: item.imageUrl,
-            contentType: "image/png",
-          }
+          quantity: item.tokenSupply,
         },
-        quantity: item.tokenSupply,
-      }]
+      ],
     });
 
     console.log("Item creation order response:", createItemResponse);
 
     // Wait for the order to be processed
+    await sleep(5000);
     let orderStatus = await minterService.getItemOrder(createItemResponse.id);
+    console.log("Initial order status:", orderStatus);
+
     while (orderStatus.status !== "completed") {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await sleep(1000);
       orderStatus = await minterService.getItemOrder(createItemResponse.id);
+      console.log("Updated order status:", orderStatus);
     }
 
+    const createdItem = orderStatus.items[0];
     return {
-      ...orderStatus.items[0],
+      ...createdItem,
       collectionId: collection.id,
     };
   } catch (error) {

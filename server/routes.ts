@@ -276,12 +276,13 @@ export function registerRoutes(app: Express): Server {
       // Store the item in our database
       const [savedItem] = await db.insert(items).values({
         userId: user.id,
+        collectionId: mintedItem.collectionId,
         handcashItemId: mintedItem.id,
         name: mintedItem.name,
         description: mintedItem.description,
-        imageUrl: mintedItem.image.url,
+        imageUrl: mintedItem.mediaDetails.image.url,
         tokenSymbol: mintedItem.tokenSymbol,
-        tokenSupply: mintedItem.tokenSupply,
+        tokenSupply: mintedItem.quantity,
       }).returning();
 
       res.json(savedItem);
