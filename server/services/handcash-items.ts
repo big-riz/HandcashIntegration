@@ -60,7 +60,7 @@ class HandCashMinterService {
 
   async getItemOrder(orderId: string) {
     try {
-      return await this.account.getCreateItemsOrder(orderId);
+      return await this.account.getOrderItems(orderId);
     } catch (error) {
       console.error("Error getting item order:", error);
       throw error;
@@ -95,8 +95,8 @@ async function getOrCreateCollection() {
       image: {
         url: "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
         contentType: "image/png",
-      }
-    }
+      },
+    },
   };
 
   console.log("Creating collection with params:", collection);
@@ -142,22 +142,24 @@ export async function mintItem(authToken: string, item: ItemProps) {
     // Create the item order with proper metadata structure
     const createItemResponse = await minterService.createItemsOrder({
       collectionId: collection.handcashCollectionId,
-      items: [{
-        name: item.name,
-        description: item.description,
-        rarity: "Common",
-        attributes: [
-          { name: "Edition", value: "Test", displayType: "string" },
-          { name: "Generation", value: "1", displayType: "string" },
-        ],
-        mediaDetails: {
-          image: {
-            url: item.imageUrl,
-            contentType: "image/png",
-          }
+      items: [
+        {
+          name: item.name,
+          description: item.description,
+          rarity: "Common",
+          attributes: [
+            { name: "Edition", value: "Test", displayType: "string" },
+            { name: "Generation", value: "1", displayType: "string" },
+          ],
+          mediaDetails: {
+            image: {
+              url: item.imageUrl,
+              contentType: "image/png",
+            },
+          },
+          quantity: item.tokenSupply,
         },
-        quantity: item.tokenSupply,
-      }]
+      ],
     });
 
     console.log("Item creation order response:", createItemResponse);

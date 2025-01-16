@@ -45,6 +45,7 @@ export const items = pgTable("items", {
   userId: integer("user_id").references(() => users.id).notNull(),
   collectionId: integer("collection_id").references(() => collections.id).notNull(),
   handcashItemId: text("handcash_item_id").unique().notNull(),
+  origin: text("origin"),  // New field to store HandCash origin
   name: text("name").notNull(),
   description: text("description"),
   imageUrl: text("image_url").notNull(),

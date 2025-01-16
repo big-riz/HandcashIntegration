@@ -278,6 +278,7 @@ export function registerRoutes(app: Express): Server {
         userId: user.id,
         collectionId: mintedItem.collectionId,
         handcashItemId: mintedItem.id,
+        origin: mintedItem.origin, // Store the origin from HandCash response
         name: mintedItem.name,
         description: mintedItem.description,
         imageUrl: mintedItem.mediaDetails.image.url,
