@@ -10,22 +10,28 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const { data: profile, isLoading } = useQuery<HandCashProfile>({
+  const { data: profile, isLoading, error } = useQuery<HandCashProfile>({
     queryKey: ['/api/profile'],
     retry: false,
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: "Failed to load profile. Please try connecting again.",
-        variant: "destructive"
-      });
-      setLocation('/');
-    }
   });
+
+  // Handle unauthenticated state
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load profile. Please try connecting again.",
+      variant: "destructive"
+    });
+    setLocation('/');
+    return null;
+  }
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/logout', { method: 'POST' });
+      await fetch('/api/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      });
       setLocation('/');
     } catch (error) {
       toast({
@@ -45,6 +51,7 @@ export default function Dashboard() {
   }
 
   if (!profile) {
+    setLocation('/');
     return null;
   }
 

@@ -6,6 +6,11 @@ export interface HandCashProfile {
   avatarUrl: string;
 }
 
+export interface HandCashError {
+  message: string;
+  status: number;
+}
+
 declare module 'express-session' {
   interface SessionData {
     authToken: string;

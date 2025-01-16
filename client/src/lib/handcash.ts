@@ -13,5 +13,10 @@ export const handCashConnect = new HandCashConnect({
 });
 
 export const getRedirectUrl = () => {
-  return handCashConnect.getRedirectionUrl();
+  // Get the current origin to handle both development and production
+  const origin = window.location.origin;
+  return handCashConnect.getRedirectionUrl({
+    successUrl: `${origin}/handcash/success`,
+    failureUrl: `${origin}/?error=auth_failed`
+  });
 };
