@@ -30,6 +30,19 @@ export const webhookEvents = pgTable("webhook_events", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const items = pgTable("items", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  handcashItemId: text("handcash_item_id").unique().notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url").notNull(),
+  tokenSymbol: text("token_symbol").notNull(),
+  tokenSupply: integer("token_supply").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Define relations
 export const paymentRequestsRelations = relations(paymentRequests, ({ many }) => ({
   webhookEvents: many(webhookEvents),
@@ -42,6 +55,14 @@ export const webhookEventsRelations = relations(webhookEvents, ({ one }) => ({
   }),
 }));
 
+export const itemsRelations = relations(items, ({ one }) => ({
+  user: one(users, {
+    fields: [items.userId],
+    references: [users.id],
+  }),
+}));
+
+// Schemas
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = typeof users.$inferInsert;
@@ -56,3 +77,8 @@ export const insertWebhookEventSchema = createInsertSchema(webhookEvents);
 export const selectWebhookEventSchema = createSelectSchema(webhookEvents);
 export type InsertWebhookEvent = typeof webhookEvents.$inferInsert;
 export type SelectWebhookEvent = typeof webhookEvents.$inferSelect;
+
+export const insertItemSchema = createInsertSchema(items);
+export const selectItemSchema = createSelectSchema(items);
+export type InsertItem = typeof items.$inferInsert;
+export type SelectItem = typeof items.$inferSelect;

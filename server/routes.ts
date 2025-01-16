@@ -4,8 +4,9 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { handCashConnect } from "./config/handcash";
 import { db } from "@db";
-import { users, paymentRequests, webhookEvents } from "@db/schema";
+import { users, paymentRequests, webhookEvents, items } from "@db/schema";
 import { eq } from "drizzle-orm";
+import { mintItem, getUserItems } from "./services/handcash-items";
 
 const MemoryStoreSession = MemoryStore(session);
 
@@ -243,6 +244,91 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("HandCash auth error:", error);
       res.redirect("/?error=auth_failed");
+    }
+  });
+
+  app.post("/api/items", async (req, res) => {
+    const authToken = req.session.authToken;
+
+    if (!authToken) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.authToken, authToken),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { name, description, imageUrl, tokenSupply } = req.body;
+
+      // Mint the item using HandCash
+      const mintedItem = await mintItem(authToken, {
+        name,
+        description,
+        imageUrl,
+        tokenSupply,
+      });
+
+      // Store the item in our database
+      const [savedItem] = await db.insert(items).values({
+        userId: user.id,
+        handcashItemId: mintedItem.id,
+        name: mintedItem.name,
+        description: mintedItem.description,
+        imageUrl: mintedItem.image.url,
+        tokenSymbol: mintedItem.tokenSymbol,
+        tokenSupply: mintedItem.tokenSupply,
+      }).returning();
+
+      res.json(savedItem);
+    } catch (error) {
+      console.error("Item creation error:", error);
+      res.status(500).json({ message: "Failed to create item" });
+    }
+  });
+
+  app.get("/api/items", async (req, res) => {
+    const authToken = req.session.authToken;
+
+    if (!authToken) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.authToken, authToken),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Fetch items from HandCash
+      const handcashItems = await getUserItems(authToken);
+
+      // Fetch items from our database
+      const dbItems = await db.query.items.findMany({
+        where: eq(items.userId, user.id),
+        orderBy: (items, { desc }) => [desc(items.createdAt)],
+      });
+
+      // Merge HandCash and database items
+      const mergedItems = handcashItems.map(handcashItem => {
+        const dbItem = dbItems.find(item => item.handcashItemId === handcashItem.id);
+        return {
+          ...handcashItem,
+          dbId: dbItem?.id,
+        };
+      });
+
+      res.json(mergedItems);
+    } catch (error) {
+      console.error("Items fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch items" });
     }
   });
 
