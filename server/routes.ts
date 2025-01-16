@@ -61,22 +61,13 @@ export function registerRoutes(app: Express): Server {
       const account = handCashConnect.getAccountFromAuthToken(authToken);
       const profile = await account.profile.getCurrentProfile();
 
-      // Store or update user in database with complete profile data
+      // Store or update user in database
       await db.insert(users).values({
         handle: profile.publicProfile.handle,
-        authToken,
-        publicProfile: true, // HandCash profiles are public by default
-        displayName: profile.publicProfile.displayName,
-        avatarUrl: profile.publicProfile.avatarUrl || null,
-        paymail: profile.publicProfile.paymail,
+        authToken: authToken,
       }).onConflictDoUpdate({
         target: users.handle,
-        set: {
-          authToken,
-          displayName: profile.publicProfile.displayName,
-          avatarUrl: profile.publicProfile.avatarUrl || null,
-          paymail: profile.publicProfile.paymail,
-        }
+        set: { authToken }
       });
 
       req.session.authToken = authToken;
