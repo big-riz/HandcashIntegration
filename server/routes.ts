@@ -4,7 +4,7 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { handCashConnect } from "./config/handcash";
 import { db } from "@db";
-import { users, paymentRequests, webhookEvents, items } from "@db/schema";
+import { users, paymentRequests, webhookEvents, items, collections } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { mintItem, getUserItems } from "./services/handcash-items";
 
@@ -337,6 +337,25 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Items fetch error:", error);
       res.status(500).json({ message: "Failed to fetch items" });
+    }
+  });
+
+  app.get("/api/collections", async (req, res) => {
+    const authToken = req.session.authToken;
+
+    if (!authToken) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const allCollections = await db.query.collections.findMany({
+        orderBy: (collections, { desc }) => [desc(collections.createdAt)],
+      });
+
+      res.json(allCollections);
+    } catch (error) {
+      console.error("Collections fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch collections" });
     }
   });
 
