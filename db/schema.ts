@@ -10,6 +10,16 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const collections = pgTable("collections", {
+  id: serial("id").primaryKey(),
+  handcashCollectionId: text("handcash_collection_id").unique().notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const paymentRequests = pgTable("payment_requests", {
   id: serial("id").primaryKey(),
   handcashRequestId: text("handcash_request_id").unique().notNull(),
@@ -33,6 +43,7 @@ export const webhookEvents = pgTable("webhook_events", {
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
+  collectionId: integer("collection_id").references(() => collections.id).notNull(),
   handcashItemId: text("handcash_item_id").unique().notNull(),
   name: text("name").notNull(),
   description: text("description"),
@@ -60,6 +71,10 @@ export const itemsRelations = relations(items, ({ one }) => ({
     fields: [items.userId],
     references: [users.id],
   }),
+  collection: one(collections, {
+    fields: [items.collectionId],
+    references: [collections.id],
+  }),
 }));
 
 // Schemas
@@ -67,6 +82,11 @@ export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
 export type InsertUser = typeof users.$inferInsert;
 export type SelectUser = typeof users.$inferSelect;
+
+export const insertCollectionSchema = createInsertSchema(collections);
+export const selectCollectionSchema = createSelectSchema(collections);
+export type InsertCollection = typeof collections.$inferInsert;
+export type SelectCollection = typeof collections.$inferSelect;
 
 export const insertPaymentRequestSchema = createInsertSchema(paymentRequests);
 export const selectPaymentRequestSchema = createSelectSchema(paymentRequests);
