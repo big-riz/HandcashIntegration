@@ -267,13 +267,13 @@ export function registerRoutes(app: Express): Server {
 
       const { name, description, imageUrl, tokenSupply } = req.body;
 
-      // Mint the item using HandCash
+      // Mint the item using HandCash with user's handle
       const mintedItem = await mintItem(authToken, {
         name,
         description,
         imageUrl,
         tokenSupply,
-      });
+      }, user.handle);
 
       // Store the item in our database
       const [savedItem] = await db
@@ -282,7 +282,7 @@ export function registerRoutes(app: Express): Server {
           userId: user.id,
           collectionId: mintedItem.collectionId,
           handcashItemId: mintedItem.id,
-          origin: mintedItem.origin, // Store the origin from HandCash response
+          origin: mintedItem.origin,
           name: mintedItem.name,
           description: mintedItem.description,
           imageUrl: mintedItem.imageUrl,
