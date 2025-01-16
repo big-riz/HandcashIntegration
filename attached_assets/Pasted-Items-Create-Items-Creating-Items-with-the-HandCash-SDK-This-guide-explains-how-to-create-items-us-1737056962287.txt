@@ -1,0 +1,181 @@
+Items
+Create Items
+
+Creating Items with the HandCash SDK
+
+This guide explains how to create items using your business wallet credentials with the HandCash SDK.
+​
+Setup
+
+First, import the necessary module and initialize the HandCash Minter:
+
+import { HandCashMinter } from '@handcash/handcash-connect';
+
+const handCashMinter = HandCashMinter.fromAppCredentials({
+  appId: process.env.HANDCASH_APP_ID,
+  authToken: process.env.HANDCASH_AUTH_TOKEN,
+  appSecret: process.env.HANDCASH_APP_SECRET
+});
+
+​
+Creating Items
+
+Use the createItemsOrder method to create new items:
+
+async function createItems() {
+  const collectionId = "657762fc2acbecc109d8c1fb";
+
+  const creationOrder = await handCashMinter.createItemsOrder({
+    collectionId,
+    items: [
+      {
+        user: "612cba70e108780b4f6817ad",
+        name: "Rafa",
+        rarity: "Mythic",
+        attributes: [
+          { name: "Edition", value: "Test", displayType: "string" },
+          { name: "Generation", value: "1", displayType: "string" },
+          { name: "Country", value: "Spain", displayType: "string" }
+        ],
+        mediaDetails: {
+          image: {
+            url: "https://res.cloudinary.com/handcash-iae/image/upload/v1702398977/items/jyn2qqyqyepqhqi9p661.webp",
+            contentType: "image/webp"
+          }
+        },
+        color: "#bf9078",
+        quantity: 3
+      },
+      // Add more items as needed
+    ]
+  });
+
+  console.log(`Items order created, items are being created asynchronously`);
+  return creationOrder;
+}
+
+// Execute the function
+createItems().catch(console.error);
+
+​
+Creating items with 3D renders
+
+Use the following media details structure to include a GLB file to represent your item.
+
+{
+    mediaDetails: {
+        image: {
+            url: 'https://server.com/assets/7ffa34b14f853e0d007d87284fae9b64.png',
+            contentType: 'image/png',
+        },
+        multimedia: {
+            url: 'https://server.com/assets/3e9ec7f87d31c19fb6389b1298d681c2.glb',
+            contentType: 'application/glb',
+        }
+    },
+}
+
+​
+Types
+
+Here are the TypeScript types for creating items:
+
+type CreateItemsOrderParams = {
+  collectionId: string;
+  items: CreateItemMetadata[];
+  uid?: string;
+};
+
+type CreateItemMetadata = {
+  name: string;
+  user?: string;
+  description?: string;
+  rarity?: string;
+  quantity: number;
+  color?: string;
+  attributes: ItemAttributeMetadata[];
+  mediaDetails: MediaDetails;
+  origin?: string;
+  actions: Action[];
+  groupingValue?: string;
+  externalId?: string;
+};
+
+type Action = {
+  name: string;
+  description: string;
+  url: string;
+  enabled?: boolean;
+};
+
+export type File = {
+	url: string;
+	contentType: string;
+};
+
+export type MediaDetails = {
+	image: File;
+	multimedia?: File;
+};
+
+export type ItemAttributeMetadata = {
+	name: string;
+	value: any;
+	displayType: 'string' | 'number' | 'date'
+};
+
+​
+Important Notes
+
+    If user is not provided, items will be issued to the business’s wallet.
+
+    quantity specifies how many items to mint (100 items per order).
+
+    externalId is an optional ID that can be used later to look up a particular item.
+
+    uid is an optional string that you can use to look up the status of a particular order.
+
+    multimedia can be used to pass a .glb 3d file url, you will also need to pass a image.url for a thumbnail
+
+    You must use the proper displayType for filters in the handcash market to work properly
+
+​
+Item Actions
+
+Item actions allow users to interact with your game from HandCash. Here’s an example of creating an item with an action:
+
+const creationOrder = await handCashMinter.createItemsOrder({
+  collectionId,
+  items: [
+    {
+      user: "612cba70e108780b4f6817ad",
+      name: "Mystery box",
+      rarity: "Mythic",
+      mediaDetails: {
+        image: {
+          url: "https://res.cloudinary.com/handcash-iae/image/upload/v1702398977/items/jyn2a2yqyepqhqi9p661.webp",
+          contentType: "image/png"
+        }
+      },
+      actions: [
+        {
+          name: "Open",
+          description: "Redeem this box for 10x random items.",
+          url: "https://mygame.com/actions/open"
+        }
+      ],
+      quantity: 1,
+    }
+  ]
+});
+
+​
+Handling Item Actions
+
+    When a user executes an action, they will be redirected to the URL specified in the action with query parameters: ?itemOrigin=<string>&authToken=<string>.
+
+    Capture these parameters in your application.
+
+    Use the authToken to leverage the HandCash Connect SDK for operations like transferring items, crafting and burning items, or transferring money.
+
+An example use case will be illustrated in crafting items

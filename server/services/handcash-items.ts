@@ -1,6 +1,5 @@
 import { HandCashConnect } from '@handcash/handcash-connect';
 import { handCashConnect } from "../config/handcash";
-import { nanoid } from 'nanoid';
 
 export interface ItemProps {
   name: string;
@@ -18,8 +17,6 @@ class HandCashCloudService {
   }
 
   private async sendRequest(method: string, endpoint: string, body?: any) {
-    const timestamp = new Date().toISOString();
-    const nonce = nanoid();
     const appId = process.env.VITE_HANDCASH_APP_ID!;
     const appSecret = process.env.VITE_HANDCASH_APP_SECRET!;
 
@@ -45,14 +42,6 @@ class HandCashCloudService {
     return response.json();
   }
 
-  async createCatalog(name: string, description: string, imageUrl: string) {
-    return this.sendRequest('POST', '/v3/itemCatalog', {
-      name,
-      description,
-      image: { url: imageUrl }
-    });
-  }
-
   async createItemsOrder(items: any[]) {
     return this.sendRequest('POST', '/v3/itemCreationOrder', {
       items
@@ -72,25 +61,23 @@ export async function mintItem(authToken: string, item: ItemProps) {
   try {
     const cloudService = new HandCashCloudService(authToken);
 
-    // Create a catalog for the items
-    const catalog = await cloudService.createCatalog(
-      "Test Collection",
-      "A test collection for minted items",
-      "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png"
-    );
-
-    // Create the item order
+    // Create the item order with proper metadata structure
     const createItemResponse = await cloudService.createItemsOrder([{
       tokenSymbol: item.name.toUpperCase().replace(/\s+/g, '_'),
       name: item.name,
       description: item.description,
-      image: {
-        url: item.imageUrl,
+      mediaDetails: {
+        image: {
+          url: item.imageUrl,
+          contentType: 'image/png'
+        }
       },
-      tokenSupply: item.tokenSupply,
-      rarity: {
-        max: item.tokenSupply,
-      }
+      rarity: "Common",
+      attributes: [
+        { name: "Edition", value: "Test", displayType: "string" },
+        { name: "Generation", value: "1", displayType: "string" }
+      ],
+      quantity: item.tokenSupply
     }]);
 
     // Wait for the order to be processed
