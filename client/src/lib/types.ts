@@ -4,6 +4,8 @@ export interface HandCashProfile {
   paymail: string;
   displayName: string;
   avatarUrl: string;
+  publicKey: string;
+  bsvAddress: string;
 }
 
 export interface HandCashError {
