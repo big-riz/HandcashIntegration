@@ -63,7 +63,7 @@ export function registerRoutes(app: Express): Server {
 
       // Store or update user in database
       await db.insert(users).values({
-        handle: profile.handle,
+        handle: profile.publicProfile.handle,
         authToken: authToken,
       }).onConflictDoUpdate({
         target: users.handle,
