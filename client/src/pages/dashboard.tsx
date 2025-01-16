@@ -63,12 +63,12 @@ export default function Dashboard() {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12 border-2 border-primary">
-              <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />
-              <AvatarFallback>{profile.displayName[0]}</AvatarFallback>
+              <AvatarImage src={profile.publicProfile.avatarUrl} alt={profile.publicProfile.displayName} />
+              <AvatarFallback>{profile.publicProfile.displayName[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{profile.displayName}</h1>
-              <p className="text-sm text-gray-500">@{profile.handle}</p>
+              <h1 className="text-3xl font-bold text-gray-900">{profile.publicProfile.displayName}</h1>
+              <p className="text-sm text-gray-500">@{profile.publicProfile.handle}</p>
             </div>
           </div>
           <Button variant="outline" onClick={handleLogout}>
@@ -90,19 +90,15 @@ export default function Dashboard() {
               <div className="grid gap-4">
                 <div>
                   <h3 className="font-semibold">Handle</h3>
-                  <p className="text-sm text-gray-600">@{profile.handle}</p>
+                  <p className="text-sm text-gray-600">@{profile.publicProfile.handle}</p>
                 </div>
                 <div>
                   <h3 className="font-semibold">Display Name</h3>
-                  <p className="text-sm text-gray-600">{profile.displayName}</p>
+                  <p className="text-sm text-gray-600">{profile.publicProfile.displayName}</p>
                 </div>
                 <div>
                   <h3 className="font-semibold">Paymail</h3>
                   <p className="text-sm text-gray-600">{profile.paymail}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold">Public Profile</h3>
-                  <p className="text-sm text-gray-600">{profile.publicProfile ? 'Yes' : 'No'}</p>
                 </div>
               </div>
             </CardContent>
@@ -123,7 +119,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="font-semibold">BSV Address</h3>
-                  <p className="text-sm text-gray-600 break-all">{profile.bsvAddress}</p>
+                  <p className="text-sm text-gray-600 break-all">{profile.publicProfile.bsvAddress}</p>
                 </div>
               </div>
             </CardContent>

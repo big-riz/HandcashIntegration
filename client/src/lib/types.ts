@@ -1,11 +1,18 @@
 export interface HandCashProfile {
-  handle: string;
-  publicProfile: boolean;
-  paymail: string;
-  displayName: string;
-  avatarUrl: string;
+  publicProfile: {
+    handle: string;
+    displayName: string;
+    avatarUrl: string;
+    publicKey: string;
+    bsvAddress: string;
+    paymail: string;
+  };
+  privateProfile: {
+    email?: string;
+    phoneNumber?: string;
+  };
   publicKey: string;
-  bsvAddress: string;
+  paymail: string;
 }
 
 export interface HandCashError {
