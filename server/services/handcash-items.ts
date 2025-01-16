@@ -142,28 +142,22 @@ export async function mintItem(authToken: string, item: ItemProps) {
     // Create the item order with proper metadata structure
     const createItemResponse = await minterService.createItemsOrder({
       collectionId: collection.handcashCollectionId,
-      items: [
-        {
-          name: item.name,
-          description: item.description,
-          rarity: "Common",
-          attributes: [
-            { name: "Edition", value: "Test", displayType: "string" },
-            { name: "Generation", value: "1", displayType: "string" },
-          ],
-          mediaDetails: {
-            image: {
-              url: item.imageUrl,
-              contentType: "image/png",
-            },
-            thumbnail: {
-              url: item.imageUrl,
-              contentType: "image/png",
-            },
-          },
-          quantity: item.tokenSupply,
+      items: [{
+        name: item.name,
+        description: item.description,
+        rarity: "Common",
+        attributes: [
+          { name: "Edition", value: "Test", displayType: "string" },
+          { name: "Generation", value: "1", displayType: "string" },
+        ],
+        mediaDetails: {
+          image: {
+            url: item.imageUrl,
+            contentType: "image/png",
+          }
         },
-      ],
+        quantity: item.tokenSupply,
+      }]
     });
 
     console.log("Item creation order response:", createItemResponse);
