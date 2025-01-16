@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { LogOut, User, Wallet2, DollarSign, QrCode, History } from "lucide-react";
+import { LogOut, User, Wallet2, DollarSign, QrCode, History, Plus } from "lucide-react";
 import { HandCashProfile } from "@/lib/types";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -112,6 +112,10 @@ export default function Dashboard() {
     createPaymentRequest.mutate();
   };
 
+  const handleMintItem = () => {
+    setLocation('/mint');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -205,7 +209,7 @@ export default function Dashboard() {
                   <h3 className="font-semibold">BSV Address</h3>
                   <p className="text-sm text-gray-600 break-all">{profile.publicProfile.bsvAddress}</p>
                 </div>
-                <div className="pt-4">
+                <div className="pt-4 space-y-2">
                   <Button 
                     onClick={handleCreatePayment}
                     disabled={createPaymentRequest.isPending}
@@ -213,6 +217,14 @@ export default function Dashboard() {
                   >
                     <DollarSign className="w-4 h-4 mr-2" />
                     Request 1 Cent Payment
+                  </Button>
+                  <Button 
+                    onClick={handleMintItem}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Mint Test Item
                   </Button>
                 </div>
               </div>
