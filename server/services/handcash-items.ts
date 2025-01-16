@@ -11,6 +11,7 @@ export interface ItemProps {
 
 class HandCashCloudService {
   private account: any;
+  private baseApiEndpoint = 'https://cloud.handcash.io';
 
   constructor(authToken: string) {
     this.account = handCashConnect.getAccountFromAuthToken(authToken);
@@ -29,7 +30,7 @@ class HandCashCloudService {
       'App-Secret': appSecret,
     };
 
-    const response = await fetch(`https://cloud.handcash.io${endpoint}`, {
+    const response = await fetch(`${this.baseApiEndpoint}${endpoint}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -44,27 +45,26 @@ class HandCashCloudService {
     return response.json();
   }
 
-  async createCollection(name: string, description: string, imageUrl: string) {
-    return this.sendRequest('POST', '/v1/collections', {
+  async createCatalog(name: string, description: string, imageUrl: string) {
+    return this.sendRequest('POST', '/v3/itemCatalog', {
       name,
       description,
       image: { url: imageUrl }
     });
   }
 
-  async createItems(collectionId: string, items: any[]) {
-    return this.sendRequest('POST', '/v1/items', {
-      collectionId,
+  async createItemsOrder(items: any[]) {
+    return this.sendRequest('POST', '/v3/itemCreationOrder', {
       items
     });
   }
 
-  async getItem(itemId: string) {
-    return this.sendRequest('GET', `/v1/items/${itemId}`);
+  async getItemOrder(orderId: string) {
+    return this.sendRequest('GET', `/v3/itemCreationOrder/${orderId}`);
   }
 
   async getUserItems() {
-    return this.sendRequest('GET', '/v1/items');
+    return this.sendRequest('GET', '/v3/items');
   }
 }
 
@@ -72,15 +72,15 @@ export async function mintItem(authToken: string, item: ItemProps) {
   try {
     const cloudService = new HandCashCloudService(authToken);
 
-    // Create a collection for the item
-    const collection = await cloudService.createCollection(
+    // Create a catalog for the items
+    const catalog = await cloudService.createCatalog(
       "Test Collection",
       "A test collection for minted items",
       "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png"
     );
 
-    // Create the item in the collection
-    const createItemResponse = await cloudService.createItems(collection.id, [{
+    // Create the item order
+    const createItemResponse = await cloudService.createItemsOrder([{
       tokenSymbol: item.name.toUpperCase().replace(/\s+/g, '_'),
       name: item.name,
       description: item.description,
@@ -93,15 +93,14 @@ export async function mintItem(authToken: string, item: ItemProps) {
       }
     }]);
 
-    // Wait for the item to be minted
-    const itemId = createItemResponse.items[0].id;
-    let itemStatus = await cloudService.getItem(itemId);
-    while (itemStatus.status !== 'completed') {
+    // Wait for the order to be processed
+    let orderStatus = await cloudService.getItemOrder(createItemResponse.id);
+    while (orderStatus.status !== 'completed') {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      itemStatus = await cloudService.getItem(itemId);
+      orderStatus = await cloudService.getItemOrder(createItemResponse.id);
     }
 
-    return itemStatus;
+    return orderStatus.items[0];
   } catch (error) {
     console.error('Error minting item:', error);
     throw new Error('Failed to mint item');
