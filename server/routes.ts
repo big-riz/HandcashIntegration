@@ -50,7 +50,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get('/handcash/success', async (req, res) => {
+  app.get('/auth', async (req, res) => {
     const authToken = req.query.authToken as string;
 
     if (!authToken) {

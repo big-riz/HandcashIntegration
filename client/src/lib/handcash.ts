@@ -16,7 +16,7 @@ export const getRedirectUrl = () => {
   // Get the current origin to handle both development and production
   const origin = window.location.origin;
   return handCashConnect.getRedirectionUrl({
-    successUrl: `${origin}/handcash/success`,
+    successUrl: `${origin}/auth`,
     failureUrl: `${origin}/?error=auth_failed`
   });
 };
