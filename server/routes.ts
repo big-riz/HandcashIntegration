@@ -78,11 +78,14 @@ export function registerRoutes(app: Express): Server {
         body: JSON.stringify({
           product: {
             name: '1 Cent Transaction',
-            description: 'Test payment of 1 cent'
+            description: 'Test payment request for 1 cent using HandCash',
+            imageUrl: 'https://handcash.io/resources/images/handcash-logo.png'
           },
+          instrumentCurrencyCode: 'BSV',
+          denominationCurrencyCode: 'USD',
           receivers: [{
             sendAmount: 0.01,
-            destination: user.handle // Use user's HandCash handle as destination
+            destination: user.handle
           }],
           requestedUserData: ['paymail'],
           notifications: {
@@ -93,15 +96,19 @@ export function registerRoutes(app: Express): Server {
               }
             }
           },
-          expirationType: 'onPaymentCompleted'
+          expirationType: 'onPaymentCompleted',
+          redirectUrl: `${process.env.VITE_APP_URL || 'https://your-domain.com'}/dashboard`
         })
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('HandCash API error response:', errorText);
         throw new Error(`HandCash API error: ${response.statusText}`);
       }
 
       const paymentRequest = await response.json();
+      console.log('HandCash payment request created:', paymentRequest);
 
       // Store payment request in database
       const [savedRequest] = await db.insert(paymentRequests).values({
@@ -126,6 +133,7 @@ export function registerRoutes(app: Express): Server {
   app.post('/api/webhooks/handcash', async (req, res) => {
     try {
       const { paymentRequestId, status, transactionId } = req.body;
+      console.log('Received webhook:', { paymentRequestId, status, transactionId });
 
       // Find the payment request in our database
       const paymentRequest = await db.query.paymentRequests.findFirst({
