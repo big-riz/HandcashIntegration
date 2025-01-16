@@ -1,19 +1,55 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { LogOut, User, Wallet2 } from "lucide-react";
+import { LogOut, User, Wallet2, DollarSign, QrCode } from "lucide-react";
 import { HandCashProfile } from "@/lib/types";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState<{
+    paymentUrl: string;
+    qrCodeUrl: string;
+  } | null>(null);
 
   const { data: profile, isLoading, error } = useQuery<HandCashProfile>({
     queryKey: ['/api/profile'],
     retry: false,
+  });
+
+  const createPaymentRequest = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/payment-requests', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setPaymentDetails(data);
+      setShowPaymentDialog(true);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create payment request",
+        variant: "destructive"
+      });
+    }
   });
 
   // Handle unauthenticated state
@@ -41,6 +77,10 @@ export default function Dashboard() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleCreatePayment = () => {
+    createPaymentRequest.mutate();
   };
 
   if (isLoading) {
@@ -121,10 +161,47 @@ export default function Dashboard() {
                   <h3 className="font-semibold">BSV Address</h3>
                   <p className="text-sm text-gray-600 break-all">{profile.publicProfile.bsvAddress}</p>
                 </div>
+                <div className="pt-4">
+                  <Button 
+                    onClick={handleCreatePayment}
+                    disabled={createPaymentRequest.isPending}
+                    className="w-full"
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Request 1 Cent Payment
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Payment Dialog */}
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Payment Request</DialogTitle>
+            </DialogHeader>
+            {paymentDetails && (
+              <div className="grid gap-4">
+                <div className="flex justify-center">
+                  <img
+                    src={paymentDetails.qrCodeUrl}
+                    alt="Payment QR Code"
+                    className="w-64 h-64"
+                  />
+                </div>
+                <Button
+                  onClick={() => window.open(paymentDetails.paymentUrl, '_blank')}
+                  className="w-full"
+                >
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Open Payment Page
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

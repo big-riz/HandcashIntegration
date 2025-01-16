@@ -4,7 +4,7 @@ import session from "express-session";
 import MemoryStore from "memorystore";
 import { handCashConnect } from "./config/handcash";
 import { db } from "@db";
-import { users } from "@db/schema";
+import { users, paymentRequests, webhookEvents } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 const MemoryStoreSession = MemoryStore(session);
@@ -47,6 +47,112 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error('Profile fetch error:', error);
       res.status(500).json({ message: 'Failed to fetch profile' });
+    }
+  });
+
+  app.post('/api/payment-requests', async (req, res) => {
+    const authToken = req.session.authToken;
+
+    if (!authToken) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.authToken, authToken)
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Create payment request with HandCash
+      const response = await fetch('https://cloud.handcash.io/v3/paymentRequests', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'App-Id': process.env.VITE_HANDCASH_APP_ID!,
+          'App-Secret': process.env.VITE_HANDCASH_APP_SECRET!
+        },
+        body: JSON.stringify({
+          product: {
+            name: '1 Cent Transaction',
+            description: 'Test payment of 1 cent'
+          },
+          receivers: [{
+            sendAmount: 0.01,
+            destination: user.handle // Use user's HandCash handle as destination
+          }],
+          requestedUserData: ['paymail'],
+          notifications: {
+            webhook: {
+              webhookUrl: `${process.env.VITE_APP_URL || 'https://your-domain.com'}/api/webhooks/handcash`,
+              customParameters: {
+                userId: user.id.toString()
+              }
+            }
+          },
+          expirationType: 'onPaymentCompleted'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HandCash API error: ${response.statusText}`);
+      }
+
+      const paymentRequest = await response.json();
+
+      // Store payment request in database
+      const [savedRequest] = await db.insert(paymentRequests).values({
+        handcashRequestId: paymentRequest.id,
+        userId: user.id,
+        amount: 1, // 1 cent in satoshis
+        paymentRequestUrl: paymentRequest.paymentRequestUrl,
+        qrCodeUrl: paymentRequest.paymentRequestQrCodeUrl
+      }).returning();
+
+      res.json({
+        id: savedRequest.id,
+        paymentUrl: paymentRequest.paymentRequestUrl,
+        qrCodeUrl: paymentRequest.paymentRequestQrCodeUrl
+      });
+    } catch (error) {
+      console.error('Payment request creation error:', error);
+      res.status(500).json({ message: 'Failed to create payment request' });
+    }
+  });
+
+  app.post('/api/webhooks/handcash', async (req, res) => {
+    try {
+      const { paymentRequestId, status, transactionId } = req.body;
+
+      // Find the payment request in our database
+      const paymentRequest = await db.query.paymentRequests.findFirst({
+        where: eq(paymentRequests.handcashRequestId, paymentRequestId)
+      });
+
+      if (!paymentRequest) {
+        return res.status(404).json({ message: 'Payment request not found' });
+      }
+
+      // Store the webhook event
+      await db.insert(webhookEvents).values({
+        paymentRequestId: paymentRequest.id,
+        eventType: status,
+        payload: req.body
+      });
+
+      // Update payment request status
+      await db
+        .update(paymentRequests)
+        .set({ status: status })
+        .where(eq(paymentRequests.id, paymentRequest.id));
+
+      res.json({ message: 'Webhook processed successfully' });
+    } catch (error) {
+      console.error('Webhook processing error:', error);
+      res.status(500).json({ message: 'Failed to process webhook' });
     }
   });
 
