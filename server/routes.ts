@@ -164,7 +164,9 @@ export function registerRoutes(app: Express): Server {
         with: {
           webhookEvents: true,
         },
-        orderBy: (paymentRequests, { desc }) => [desc(paymentRequests.createdAt)],
+        orderBy: (paymentRequests, { desc }) => [
+          desc(paymentRequests.createdAt),
+        ],
       });
 
       res.json(userPaymentRequests);
@@ -177,11 +179,11 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/webhooks/handcash", async (req, res) => {
     try {
       const { paymentRequestId, status, transactionId, appSecret } = req.body;
-      console.log('Received webhook:', req.body);
+      console.log("Received webhook:", req.body);
 
       // Verify this is a valid HandCash webhook
       if (appSecret !== process.env.VITE_HANDCASH_APP_SECRET) {
-        return res.status(403).json({ message: 'Invalid webhook signature' });
+        return res.status(403).json({ message: "Invalid webhook signature" });
       }
 
       // Find the payment request in our database
@@ -194,7 +196,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // If we have a transaction ID, consider it a completed payment
-      const eventType = status || (transactionId ? 'completed' : 'pending');
+      const eventType = status || (transactionId ? "completed" : "pending");
 
       // Store the webhook event
       await db.insert(webhookEvents).values({
@@ -274,17 +276,19 @@ export function registerRoutes(app: Express): Server {
       });
 
       // Store the item in our database
-      const [savedItem] = await db.insert(items).values({
-        userId: user.id,
-        collectionId: mintedItem.collectionId,
-        handcashItemId: mintedItem.id,
-        origin: mintedItem.origin, // Store the origin from HandCash response
-        name: mintedItem.name,
-        description: mintedItem.description,
-        imageUrl: mintedItem.mediaDetails.image.url,
-        tokenSymbol: mintedItem.tokenSymbol,
-        tokenSupply: mintedItem.quantity,
-      }).returning();
+      const [savedItem] = await db
+        .insert(items)
+        .values({
+          userId: user.id,
+          collectionId: mintedItem.collectionId,
+          handcashItemId: mintedItem.id,
+          origin: mintedItem.origin, // Store the origin from HandCash response
+          name: mintedItem.name,
+          description: mintedItem.description,
+          imageUrl: mintedItem.imageUrl,
+          tokenSupply: mintedItem.count,
+        })
+        .returning();
 
       res.json(savedItem);
     } catch (error) {
@@ -319,8 +323,10 @@ export function registerRoutes(app: Express): Server {
       });
 
       // Merge HandCash and database items
-      const mergedItems = handcashItems.map(handcashItem => {
-        const dbItem = dbItems.find(item => item.handcashItemId === handcashItem.id);
+      const mergedItems = handcashItems.map((handcashItem) => {
+        const dbItem = dbItems.find(
+          (item) => item.handcashItemId === handcashItem.id,
+        );
         return {
           ...handcashItem,
           dbId: dbItem?.id,

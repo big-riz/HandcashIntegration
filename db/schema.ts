@@ -49,7 +49,6 @@ export const items = pgTable("items", {
   name: text("name").notNull(),
   description: text("description"),
   imageUrl: text("image_url").notNull(),
-  tokenSymbol: text("token_symbol").notNull(),
   tokenSupply: integer("token_supply").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

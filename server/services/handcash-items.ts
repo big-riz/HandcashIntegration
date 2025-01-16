@@ -169,13 +169,13 @@ export async function mintItem(authToken: string, item: ItemProps) {
     let orderStatus = await minterService.getItemOrder(createItemResponse.id);
     console.log("Initial order status:", orderStatus);
 
-    while (orderStatus.status !== "completed") {
+    while (orderStatus[0].origin === null) {
       await sleep(1000);
       orderStatus = await minterService.getItemOrder(createItemResponse.id);
       console.log("Updated order status:", orderStatus);
     }
 
-    const createdItem = orderStatus.items[0];
+    const createdItem = orderStatus[0];
     return {
       ...createdItem,
       collectionId: collection.id,
