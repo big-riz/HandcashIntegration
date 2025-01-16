@@ -87,10 +87,17 @@ async function getOrCreateCollection() {
   const collection = {
     name: "Test Collection",
     description: "A test collection for minted items",
-    image: {
-      url: "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
-      contentType: "image/png"
-    }
+    mediaDetails: {
+      image: {
+        url: "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
+        contentType: "image/png",
+      },
+      banner: {
+        url: "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
+        contentType: "image/png",
+      }
+    },
+    items: []
   };
 
   // Create collection
@@ -105,7 +112,7 @@ async function getOrCreateCollection() {
     handcashCollectionId: createdCollection.id,
     name: collection.name,
     description: collection.description,
-    imageUrl: collection.image.url,
+    imageUrl: collection.mediaDetails.image.url,
   }).returning();
 
   return savedCollection;
@@ -134,6 +141,10 @@ export async function mintItem(authToken: string, item: ItemProps) {
             url: item.imageUrl,
             contentType: "image/png",
           },
+          thumbnail: {
+            url: item.imageUrl,
+            contentType: "image/png",
+          }
         },
         quantity: item.tokenSupply,
       }]
