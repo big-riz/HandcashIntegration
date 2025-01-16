@@ -1,5 +1,6 @@
 import { pgTable, text, serial, timestamp, integer, json } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -28,6 +29,18 @@ export const webhookEvents = pgTable("webhook_events", {
   payload: json("payload").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Define relations
+export const paymentRequestsRelations = relations(paymentRequests, ({ many }) => ({
+  webhookEvents: many(webhookEvents),
+}));
+
+export const webhookEventsRelations = relations(webhookEvents, ({ one }) => ({
+  paymentRequest: one(paymentRequests, {
+    fields: [webhookEvents.paymentRequestId],
+    references: [paymentRequests.id],
+  }),
+}));
 
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);

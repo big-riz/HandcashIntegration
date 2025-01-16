@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { LogOut, User, Wallet2, DollarSign, QrCode } from "lucide-react";
+import { LogOut, User, Wallet2, DollarSign, QrCode, History } from "lucide-react";
 import { HandCashProfile } from "@/lib/types";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -13,6 +13,30 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+
+interface PaymentRequest {
+  id: number;
+  status: string;
+  amount: number;
+  createdAt: string;
+  paymentRequestUrl: string;
+  qrCodeUrl: string;
+  webhookEvents: Array<{
+    id: number;
+    eventType: string;
+    createdAt: string;
+  }>;
+}
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -23,9 +47,14 @@ export default function Dashboard() {
     qrCodeUrl: string;
   } | null>(null);
 
-  const { data: profile, isLoading, error } = useQuery<HandCashProfile>({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery<HandCashProfile>({
     queryKey: ['/api/profile'],
     retry: false,
+  });
+
+  const { data: paymentRequests, isLoading: paymentsLoading } = useQuery<PaymentRequest[]>({
+    queryKey: ['/api/payment-requests'],
+    enabled: !!profile,
   });
 
   const createPaymentRequest = useMutation({
@@ -53,7 +82,7 @@ export default function Dashboard() {
   });
 
   // Handle unauthenticated state
-  if (error) {
+  if (profileError) {
     toast({
       title: "Error",
       description: "Failed to load profile. Please try connecting again.",
@@ -83,7 +112,20 @@ export default function Dashboard() {
     createPaymentRequest.mutate();
   };
 
-  if (isLoading) {
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'bg-green-500';
+      case 'pending':
+        return 'bg-yellow-500';
+      case 'failed':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -117,8 +159,9 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Profile Details */}
+        {/* Profile and Wallet Cards */}
         <div className="grid gap-6 md:grid-cols-2">
+          {/* Profile Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -144,6 +187,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          {/* Wallet Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -175,6 +219,60 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Payment History */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-5 h-5" />
+              Payment History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {paymentsLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : !paymentRequests?.length ? (
+              <p className="text-center text-gray-500 py-4">No payment requests yet</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>History</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paymentRequests.map((request) => (
+                    <TableRow key={request.id}>
+                      <TableCell>
+                        {format(new Date(request.createdAt), 'MMM d, yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell>${(request.amount / 100).toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusColor(request.status)}>
+                          {request.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {request.webhookEvents.map((event) => (
+                            <div key={event.id} className="text-xs text-gray-500">
+                              {format(new Date(event.createdAt), 'HH:mm:ss')} - {event.eventType}
+                            </div>
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Payment Dialog */}
         <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>

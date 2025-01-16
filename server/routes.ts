@@ -141,6 +141,38 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/payment-requests", async (req, res) => {
+    const authToken = req.session.authToken;
+
+    if (!authToken) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const user = await db.query.users.findFirst({
+        where: eq(users.authToken, authToken),
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Fetch payment requests with their associated webhook events
+      const userPaymentRequests = await db.query.paymentRequests.findMany({
+        where: eq(paymentRequests.userId, user.id),
+        with: {
+          webhookEvents: true,
+        },
+        orderBy: (paymentRequests, { desc }) => [desc(paymentRequests.createdAt)],
+      });
+
+      res.json(userPaymentRequests);
+    } catch (error) {
+      console.error("Payment requests fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch payment requests" });
+    }
+  });
+
   app.post("/api/webhooks/handcash", async (req, res) => {
     try {
       const { paymentRequestId, status, transactionId, appSecret } = req.body;
