@@ -373,9 +373,9 @@ export function registerRoutes(app: Express): Server {
       // Enhance collections with inventory data
       const enhancedCollections = dbCollections.map(collection => ({
         ...collection,
-        itemCount: inventory.items.filter(
+        itemCount: inventory?.items?.filter(
           item => item.collectionId === collection.handcashCollectionId
-        ).length,
+        )?.length || 0,
       }));
 
       res.json(enhancedCollections);
