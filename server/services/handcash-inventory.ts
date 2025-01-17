@@ -3,8 +3,8 @@ import { handCashConnect } from "../config/handcash";
 
 export interface AttributeFilter {
   name: string;
-  displayType: 'string' | 'number';
-  operation: 'equal' | 'greater' | 'lower';
+  displayType: "string" | "number";
+  operation: "equal" | "greater" | "lower";
   value: string | number;
 }
 
@@ -15,15 +15,18 @@ export interface GetItemsFilter {
   searchString?: string;
   groupingValue?: string;
   fetchAttributes?: boolean;
-  sort?: 'name';
-  order?: 'asc' | 'desc';
+  sort?: "name";
+  order?: "asc" | "desc";
   attributes?: AttributeFilter[];
   appId?: string;
   group?: boolean;
   externalId?: string;
 }
 
-export async function getUserInventory(authToken: string, filters: GetItemsFilter = {}) {
+export async function getUserInventory(
+  authToken: string,
+  filters: GetItemsFilter = {},
+) {
   try {
     const account = handCashConnect.getAccountFromAuthToken(authToken);
     const inventory = await account.items.getItemsInventory({
@@ -31,7 +34,7 @@ export async function getUserInventory(authToken: string, filters: GetItemsFilte
       to: filters.to || 50,
       ...filters,
     });
-    
+
     return inventory;
   } catch (error) {
     console.error("Error fetching user inventory:", error);
@@ -43,7 +46,7 @@ export async function getFilteredInventory(
   authToken: string,
   collectionId?: string,
   searchString?: string,
-  attributes?: AttributeFilter[]
+  attributes?: AttributeFilter[],
 ) {
   try {
     const account = handCashConnect.getAccountFromAuthToken(authToken);
@@ -57,6 +60,7 @@ export async function getFilteredInventory(
     };
 
     const inventory = await account.items.getItemsInventory(params);
+    console.log("Inventory:", inventory);
     return inventory;
   } catch (error) {
     console.error("Error fetching filtered inventory:", error);

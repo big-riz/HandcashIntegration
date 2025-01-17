@@ -362,19 +362,26 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Get collections from our database
+      // Get user's inventory from HandCash first
+      const inventory = await getUserInventory(authToken);
+
+      // Extract unique collection IDs from inventory items
+      const userCollectionIds = [...new Set(
+        inventory?.items?.map(item => item.collection?.id) || []
+      )].filter(Boolean);
+
+      // Get collections from our database that match the user's HandCash collections
       const dbCollections = await db.query.collections.findMany({
+        where: (collections, { inArray }) => 
+          inArray(collections.handcashCollectionId, userCollectionIds),
         orderBy: (collections, { desc }) => [desc(collections.createdAt)],
       });
-
-      // Get user's inventory from HandCash
-      const inventory = await getUserInventory(authToken);
 
       // Enhance collections with inventory data
       const enhancedCollections = dbCollections.map(collection => ({
         ...collection,
         itemCount: inventory?.items?.filter(
-          item => item.collectionId === collection.handcashCollectionId
+          item => item.collection?.id === collection.handcashCollectionId
         )?.length || 0,
       }));
 
