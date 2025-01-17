@@ -49,6 +49,7 @@ export async function getFilteredInventory(
   attributes?: AttributeFilter[],
 ) {
   try {
+    const allitems = [];
     const account = handCashConnect.getAccountFromAuthToken(authToken);
     const params: GetItemsFilter = {
       from: 0,
@@ -58,10 +59,17 @@ export async function getFilteredInventory(
       attributes,
       fetchAttributes: true,
     };
+    let inventory = await account.items.getItemsInventory(params);
+    allitems.push(...inventory);
+    while (inventory.length === 50) {
+      params.from = inventory.length;
+      params.to = inventory.length + 50;
+      inventory = await account.items.getItemsInventory(params);
+      allitems.push(...inventory);
+    }
 
-    const inventory = await account.items.getItemsInventory(params);
-    console.log("Inventory:", inventory);
-    return inventory;
+    console.log("Inventory:", allitems);
+    return allitems;
   } catch (error) {
     console.error("Error fetching filtered inventory:", error);
     throw new Error("Failed to fetch filtered inventory");

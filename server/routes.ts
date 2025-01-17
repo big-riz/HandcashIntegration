@@ -362,28 +362,29 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Get user's inventory from HandCash first
-      const inventory = await getUserInventory(authToken);
-
-      // Extract unique collection IDs from inventory items
-      const userCollectionIds = [...new Set(
-        inventory?.items?.map(item => item.collection?.id) || []
-      )].filter(Boolean);
-
-      // Get collections from our database that match the user's HandCash collections
+      // Get collections from our database first
       const dbCollections = await db.query.collections.findMany({
-        where: (collections, { inArray }) => 
-          inArray(collections.handcashCollectionId, userCollectionIds),
         orderBy: (collections, { desc }) => [desc(collections.createdAt)],
       });
 
-      // Enhance collections with inventory data
-      const enhancedCollections = dbCollections.map(collection => ({
-        ...collection,
-        itemCount: inventory?.items?.filter(
-          item => item.collection?.id === collection.handcashCollectionId
-        )?.length || 0,
-      }));
+      // Get user's inventory from HandCash to validate and enhance collections
+      const inventory = await getUserInventory(authToken);
+
+      // Get the set of collection IDs from the user's inventory
+      const userCollectionIds = new Set(
+        inventory?.items?.map(item => item.collection?.id).filter(Boolean)
+      );
+
+      // Filter collections that exist in the user's HandCash inventory
+      // and enhance them with item counts
+      const enhancedCollections = dbCollections
+        .filter(collection => userCollectionIds.has(collection.handcashCollectionId))
+        .map(collection => ({
+          ...collection,
+          itemCount: inventory?.items?.filter(
+            item => item.collection?.id === collection.handcashCollectionId
+          )?.length || 0,
+        }));
 
       res.json(enhancedCollections);
     } catch (error) {
