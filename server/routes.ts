@@ -13,6 +13,7 @@ import {
 } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { mintItem, getUserItems } from "./services/handcash-items";
+import { getUserInventory, getFilteredInventory } from "./services/handcash-inventory";
 
 const MemoryStoreSession = MemoryStore(session);
 
@@ -235,20 +236,16 @@ export function registerRoutes(app: Express): Server {
       const account = handCashConnect.getAccountFromAuthToken(authToken);
       const profile = await account.profile.getCurrentProfile();
 
-      // Store or update user in database with HandCash ID
+      // Store or update user in database
       await db
         .insert(users)
         .values({
           handle: profile.publicProfile.handle,
-          handcashId: profile.publicProfile.id, // Store HandCash ID
           authToken: authToken,
         })
         .onConflictDoUpdate({
           target: users.handle,
-          set: {
-            authToken,
-            handcashId: profile.publicProfile.id, // Update HandCash ID on conflict
-          },
+          set: { authToken },
         });
 
       req.session.authToken = authToken;
@@ -275,6 +272,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "User not found" });
       }
 
+      const userprofile =
+        await handCashConnect.getAccountFromAuthToken(authToken);
+
       const { name, description, imageUrl, tokenSupply } = req.body;
 
       // Mint the item using HandCash with user's handle
@@ -286,7 +286,7 @@ export function registerRoutes(app: Express): Server {
           imageUrl,
           tokenSupply,
         },
-        user.id,
+        (await userprofile.profile.getCurrentProfile()).publicProfile.id,
       );
 
       // Store the item in our database
@@ -362,14 +362,49 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const allCollections = await db.query.collections.findMany({
+      // Get collections from our database
+      const dbCollections = await db.query.collections.findMany({
         orderBy: (collections, { desc }) => [desc(collections.createdAt)],
       });
 
-      res.json(allCollections);
+      // Get user's inventory from HandCash
+      const inventory = await getUserInventory(authToken);
+
+      // Enhance collections with inventory data
+      const enhancedCollections = dbCollections.map(collection => ({
+        ...collection,
+        itemCount: inventory.items.filter(
+          item => item.collectionId === collection.handcashCollectionId
+        ).length,
+      }));
+
+      res.json(enhancedCollections);
     } catch (error) {
       console.error("Collections fetch error:", error);
       res.status(500).json({ message: "Failed to fetch collections" });
+    }
+  });
+
+  app.get("/api/inventory", async (req, res) => {
+    const authToken = req.session.authToken;
+    const { collectionId, search, attributes } = req.query;
+
+    if (!authToken) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    try {
+      const inventory = await getFilteredInventory(
+        authToken,
+        collectionId as string,
+        search as string,
+        attributes ? JSON.parse(attributes as string) : undefined
+      );
+
+      res.json(inventory);
+    } catch (error) {
+      console.error("Inventory fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch inventory" });
     }
   });
 

@@ -1,11 +1,18 @@
-import { pgTable, text, serial, timestamp, integer, json } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  timestamp,
+  integer,
+  json,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   handle: text("handle").unique().notNull(),
-  handcashId: text("handcash_id").unique(), // Make it nullable initially
+
   authToken: text("auth_token").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -24,7 +31,9 @@ export const collections = pgTable("collections", {
 export const paymentRequests = pgTable("payment_requests", {
   id: serial("id").primaryKey(),
   handcashRequestId: text("handcash_request_id").unique().notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
   amount: integer("amount").notNull(), // in satoshis
   status: text("status").notNull().default("pending"),
   paymentRequestUrl: text("payment_request_url").notNull(),
@@ -35,7 +44,9 @@ export const paymentRequests = pgTable("payment_requests", {
 
 export const webhookEvents = pgTable("webhook_events", {
   id: serial("id").primaryKey(),
-  paymentRequestId: integer("payment_request_id").references(() => paymentRequests.id),
+  paymentRequestId: integer("payment_request_id").references(
+    () => paymentRequests.id,
+  ),
   eventType: text("event_type").notNull(),
   payload: json("payload").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -43,10 +54,14 @@ export const webhookEvents = pgTable("webhook_events", {
 
 export const items = pgTable("items", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  collectionId: integer("collection_id").references(() => collections.id).notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
+  collectionId: integer("collection_id")
+    .references(() => collections.id)
+    .notNull(),
   handcashItemId: text("handcash_item_id").unique().notNull(),
-  origin: text("origin"),  // New field to store HandCash origin
+  origin: text("origin"), // New field to store HandCash origin
   name: text("name").notNull(),
   description: text("description"),
   imageUrl: text("image_url").notNull(),
@@ -56,9 +71,12 @@ export const items = pgTable("items", {
 });
 
 // Define relations
-export const paymentRequestsRelations = relations(paymentRequests, ({ many }) => ({
-  webhookEvents: many(webhookEvents),
-}));
+export const paymentRequestsRelations = relations(
+  paymentRequests,
+  ({ many }) => ({
+    webhookEvents: many(webhookEvents),
+  }),
+);
 
 export const webhookEventsRelations = relations(webhookEvents, ({ one }) => ({
   paymentRequest: one(paymentRequests, {

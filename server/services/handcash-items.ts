@@ -133,7 +133,11 @@ async function getOrCreateCollection() {
   return savedCollection;
 }
 
-export async function mintItem(authToken: string, item: ItemProps, user: string) {
+export async function mintItem(
+  authToken: string,
+  item: ItemProps,
+  user: string,
+) {
   try {
     const minterService = new HandCashMinterService();
 
@@ -177,7 +181,7 @@ export async function mintItem(authToken: string, item: ItemProps, user: string)
       console.log("Updated order status:", orderStatus);
     }
 
-    const createdItem = orderStatus.items[0];
+    const createdItem = orderStatus[0];
     return {
       ...createdItem,
       collectionId: collection.id,
