@@ -59,13 +59,15 @@ export async function getFilteredInventory(
       attributes,
       fetchAttributes: true,
     };
-    let inventory = await account.items.getItemsInventory(params);
-    allitems.push(...inventory);
-    while (inventory.length === 50) {
-      params.from = inventory.length;
-      params.to = inventory.length + 50;
-      inventory = await account.items.getItemsInventory(params);
+    let hasMoreItems = true;
+    while (hasMoreItems) {
+      const inventory = await account.items.getItemsInventory(params);
       allitems.push(...inventory);
+      hasMoreItems = inventory.length === 50;
+      if (hasMoreItems) {
+        params.from += 50;
+        params.to += 50;
+      }
     }
 
     console.log("Inventory:", allitems);

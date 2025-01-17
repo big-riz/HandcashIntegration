@@ -3,7 +3,17 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { LogOut, User, Wallet2, DollarSign, QrCode, History, Plus, Package, Library } from "lucide-react";
+import {
+  LogOut,
+  User,
+  Wallet2,
+  DollarSign,
+  QrCode,
+  History,
+  Plus,
+  Package,
+  Library,
+} from "lucide-react";
 import { HandCashProfile } from "@/lib/types";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -42,7 +52,6 @@ interface InventoryItem {
   id: string;
   name: string;
   description: string;
-  collectionId: string;
   imageUrl: string;
   count: number;
 }
@@ -56,26 +65,34 @@ export default function Dashboard() {
     qrCodeUrl: string;
   } | null>(null);
 
-  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery<HandCashProfile>({
-    queryKey: ['/api/profile'],
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useQuery<HandCashProfile>({
+    queryKey: ["/api/profile"],
     retry: false,
   });
 
-  const { data: paymentRequests, isLoading: paymentsLoading } = useQuery<PaymentRequest[]>({
-    queryKey: ['/api/payment-requests'],
+  const { data: paymentRequests, isLoading: paymentsLoading } = useQuery<
+    PaymentRequest[]
+  >({
+    queryKey: ["/api/payment-requests"],
     enabled: !!profile,
   });
 
-  const { data: inventory, isLoading: inventoryLoading } = useQuery<{ items: InventoryItem[] }>({
-    queryKey: ['/api/inventory'],
+  const { data: inventory, isLoading: inventoryLoading } = useQuery<{
+    items: InventoryItem[];
+  }>({
+    queryKey: ["/api/inventory?collectionId=67896865762b4e5c75343c6e"],
     enabled: !!profile,
   });
 
   const createPaymentRequest = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/payment-requests', {
-        method: 'POST',
-        credentials: 'include'
+      const response = await fetch("/api/payment-requests", {
+        method: "POST",
+        credentials: "include",
       });
       if (!response.ok) {
         throw new Error(await response.text());
@@ -90,9 +107,9 @@ export default function Dashboard() {
       toast({
         title: "Error",
         description: error.message || "Failed to create payment request",
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Handle unauthenticated state
@@ -100,24 +117,24 @@ export default function Dashboard() {
     toast({
       title: "Error",
       description: "Failed to load profile. Please try connecting again.",
-      variant: "destructive"
+      variant: "destructive",
     });
-    setLocation('/');
+    setLocation("/");
     return null;
   }
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/logout', { 
-        method: 'POST',
-        credentials: 'include'
+      await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
       });
-      setLocation('/');
+      setLocation("/");
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to logout. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -127,23 +144,23 @@ export default function Dashboard() {
   };
 
   const handleMintItem = () => {
-    setLocation('/mint');
+    setLocation("/mint");
   };
 
   const handleViewCollections = () => {
-    setLocation('/collections');
+    setLocation("/collections");
   };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed':
-        return 'bg-green-500';
-      case 'pending':
-        return 'bg-yellow-500';
-      case 'failed':
-        return 'bg-red-500';
+      case "completed":
+        return "bg-green-500";
+      case "pending":
+        return "bg-yellow-500";
+      case "failed":
+        return "bg-red-500";
       default:
-        return 'bg-gray-500';
+        return "bg-gray-500";
     }
   };
 
@@ -156,7 +173,7 @@ export default function Dashboard() {
   }
 
   if (!profile) {
-    setLocation('/');
+    setLocation("/");
     return null;
   }
 
@@ -167,12 +184,21 @@ export default function Dashboard() {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <Avatar className="h-12 w-12 border-2 border-primary">
-              <AvatarImage src={profile.publicProfile.avatarUrl} alt={profile.publicProfile.displayName} />
-              <AvatarFallback>{profile.publicProfile.displayName[0]}</AvatarFallback>
+              <AvatarImage
+                src={profile.publicProfile.avatarUrl}
+                alt={profile.publicProfile.displayName}
+              />
+              <AvatarFallback>
+                {profile.publicProfile.displayName[0]}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{profile.publicProfile.displayName}</h1>
-              <p className="text-sm text-gray-500">@{profile.publicProfile.handle}</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {profile.publicProfile.displayName}
+              </h1>
+              <p className="text-sm text-gray-500">
+                @{profile.publicProfile.handle}
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -201,11 +227,15 @@ export default function Dashboard() {
               <div className="grid gap-4">
                 <div>
                   <h3 className="font-semibold">Handle</h3>
-                  <p className="text-sm text-gray-600">@{profile.publicProfile.handle}</p>
+                  <p className="text-sm text-gray-600">
+                    @{profile.publicProfile.handle}
+                  </p>
                 </div>
                 <div>
                   <h3 className="font-semibold">Display Name</h3>
-                  <p className="text-sm text-gray-600">{profile.publicProfile.displayName}</p>
+                  <p className="text-sm text-gray-600">
+                    {profile.publicProfile.displayName}
+                  </p>
                 </div>
                 <div>
                   <h3 className="font-semibold">Paymail</h3>
@@ -227,14 +257,18 @@ export default function Dashboard() {
               <div className="grid gap-4">
                 <div>
                   <h3 className="font-semibold">Public Key</h3>
-                  <p className="text-sm text-gray-600 break-all">{profile.publicKey}</p>
+                  <p className="text-sm text-gray-600 break-all">
+                    {profile.publicKey}
+                  </p>
                 </div>
                 <div>
                   <h3 className="font-semibold">BSV Address</h3>
-                  <p className="text-sm text-gray-600 break-all">{profile.publicProfile.bsvAddress}</p>
+                  <p className="text-sm text-gray-600 break-all">
+                    {profile.publicProfile.bsvAddress}
+                  </p>
                 </div>
                 <div className="pt-4 space-y-2">
-                  <Button 
+                  <Button
                     onClick={handleCreatePayment}
                     disabled={createPaymentRequest.isPending}
                     className="w-full"
@@ -242,7 +276,7 @@ export default function Dashboard() {
                     <DollarSign className="w-4 h-4 mr-2" />
                     Request 1 Cent Payment
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleMintItem}
                     className="w-full"
                     variant="outline"
@@ -284,7 +318,10 @@ export default function Dashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {inventory.items.map((item) => (
-                  <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                  <Card
+                    key={item.id}
+                    className="hover:shadow-lg transition-shadow"
+                  >
                     <CardContent className="p-4">
                       {item.imageUrl && (
                         <img
@@ -294,7 +331,9 @@ export default function Dashboard() {
                         />
                       )}
                       <h3 className="font-semibold text-sm">{item.name}</h3>
-                      <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {item.description}
+                      </p>
                       <div className="mt-2 flex justify-between items-center">
                         <Badge variant="secondary">
                           Quantity: {item.count}
@@ -322,7 +361,9 @@ export default function Dashboard() {
                 <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
               </div>
             ) : !paymentRequests?.length ? (
-              <p className="text-center text-gray-500 py-4">No payment requests yet</p>
+              <p className="text-center text-gray-500 py-4">
+                No payment requests yet
+              </p>
             ) : (
               <Table>
                 <TableHeader>
@@ -337,19 +378,31 @@ export default function Dashboard() {
                   {paymentRequests.map((request) => (
                     <TableRow key={request.id}>
                       <TableCell>
-                        {format(new Date(request.createdAt), 'MMM d, yyyy HH:mm')}
+                        {format(
+                          new Date(request.createdAt),
+                          "MMM d, yyyy HH:mm",
+                        )}
                       </TableCell>
-                      <TableCell>${(request.amount / 100).toFixed(2)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={getStatusColor(request.status)}>
+                        ${(request.amount / 100).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={getStatusColor(request.status)}
+                        >
                           {request.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           {request.webhookEvents.map((event) => (
-                            <div key={event.id} className="text-xs text-gray-500">
-                              {format(new Date(event.createdAt), 'HH:mm:ss')} - {event.eventType}
+                            <div
+                              key={event.id}
+                              className="text-xs text-gray-500"
+                            >
+                              {format(new Date(event.createdAt), "HH:mm:ss")} -{" "}
+                              {event.eventType}
                             </div>
                           ))}
                         </div>
@@ -378,7 +431,9 @@ export default function Dashboard() {
                   />
                 </div>
                 <Button
-                  onClick={() => window.open(paymentDetails.paymentUrl, '_blank')}
+                  onClick={() =>
+                    window.open(paymentDetails.paymentUrl, "_blank")
+                  }
                   className="w-full"
                 >
                   <QrCode className="w-4 h-4 mr-2" />
