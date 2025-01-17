@@ -81,9 +81,7 @@ export default function Dashboard() {
     enabled: !!profile,
   });
 
-  const { data: inventory, isLoading: inventoryLoading } = useQuery<{
-    items: InventoryItem[];
-  }>({
+  const { data: inventory, isLoading: inventoryLoading } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory?collectionId=67896865762b4e5c75343c6e"],
     enabled: !!profile,
   });
@@ -303,7 +301,7 @@ export default function Dashboard() {
               <div className="flex justify-center py-4">
                 <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
               </div>
-            ) : !inventory?.items?.length ? (
+            ) : !inventory?.length ? (
               <div className="text-center py-4">
                 <p className="text-gray-500">No items in your inventory</p>
                 <Button
@@ -317,7 +315,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {inventory.items.map((item) => (
+                {inventory.map((item) => (
                   <Card
                     key={item.id}
                     className="hover:shadow-lg transition-shadow"
