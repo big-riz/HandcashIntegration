@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { LogOut, User, Wallet2, DollarSign, QrCode, History, Plus } from "lucide-react";
+import { LogOut, User, Wallet2, DollarSign, QrCode, History, Plus, Package, Library } from "lucide-react";
 import { HandCashProfile } from "@/lib/types";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -38,6 +38,15 @@ interface PaymentRequest {
   }>;
 }
 
+interface InventoryItem {
+  id: string;
+  name: string;
+  description: string;
+  collectionId: string;
+  imageUrl: string;
+  count: number;
+}
+
 export default function Dashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -54,6 +63,11 @@ export default function Dashboard() {
 
   const { data: paymentRequests, isLoading: paymentsLoading } = useQuery<PaymentRequest[]>({
     queryKey: ['/api/payment-requests'],
+    enabled: !!profile,
+  });
+
+  const { data: inventory, isLoading: inventoryLoading } = useQuery<{ items: InventoryItem[] }>({
+    queryKey: ['/api/inventory'],
     enabled: !!profile,
   });
 
@@ -116,6 +130,10 @@ export default function Dashboard() {
     setLocation('/mint');
   };
 
+  const handleViewCollections = () => {
+    setLocation('/collections');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -157,10 +175,16 @@ export default function Dashboard() {
               <p className="text-sm text-gray-500">@{profile.publicProfile.handle}</p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Disconnect
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleViewCollections}>
+              <Library className="w-4 h-4 mr-2" />
+              Collections
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Disconnect
+            </Button>
+          </div>
         </div>
 
         {/* Profile and Wallet Cards */}
@@ -231,6 +255,58 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Inventory Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Your Items
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {inventoryLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : !inventory?.items?.length ? (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No items in your inventory</p>
+                <Button
+                  onClick={handleMintItem}
+                  variant="outline"
+                  className="mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Mint Your First Item
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {inventory.items.map((item) => (
+                  <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      {item.imageUrl && (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-32 object-cover rounded-md mb-2"
+                        />
+                      )}
+                      <h3 className="font-semibold text-sm">{item.name}</h3>
+                      <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                      <div className="mt-2 flex justify-between items-center">
+                        <Badge variant="secondary">
+                          Quantity: {item.count}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Payment History */}
         <Card>
