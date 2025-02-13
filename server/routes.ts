@@ -115,11 +115,11 @@ export function registerRoutes(app: Express): Server {
               imageUrl:
                 "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
             },
-            instrumentCurrencyCode: "USD",
+            instrumentCurrencyCode: "BSV",
             denominationCurrencyCode: "USD",
             receivers: [
               {
-                sendAmount: 0.01,
+                sendAmount: 0.00000001,
                 destination: user.handle,
               },
             ],
