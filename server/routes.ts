@@ -119,7 +119,7 @@ export function registerRoutes(app: Express): Server {
             denominationCurrencyCode: "USD",
             receivers: [
               {
-                sendAmount: 0.00000001,
+                sendAmount: 0.0001,
                 destination: user.handle,
               },
             ],
