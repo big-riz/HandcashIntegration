@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { createServer, type Server } from "https";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import { handCashConnect } from "./config/handcash";
@@ -15,6 +15,8 @@ import {
 import { eq } from "drizzle-orm";
 import { mintItem, getUserItems, makeItemProps } from "./services/handcash-items";
 import { getUserInventory, getFilteredInventory } from "./services/handcash-inventory";
+import fs from "fs";
+import path from "path";
 
 const MemoryStoreSession = MemoryStore(session);
 
@@ -440,6 +442,9 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
+  const httpsServer = createServer({
+    key: fs.readFileSync(path.join(__dirname, 'server.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'server.cert'))
+}, app)
+  return httpsServer;
 }
