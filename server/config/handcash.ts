@@ -1,5 +1,9 @@
 import { HandCashConnect } from '@handcash/handcash-connect';
 
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 // We'll throw a clear error if credentials are missing
 if (!process.env.VITE_HANDCASH_APP_ID || !process.env.VITE_HANDCASH_APP_SECRET) {
   throw new Error(
