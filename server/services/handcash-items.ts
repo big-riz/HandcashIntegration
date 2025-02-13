@@ -1,7 +1,7 @@
 import { HandCashConnect } from "@handcash/handcash-connect";
 import { HandCashMinter } from "@handcash/handcash-connect";
 import { db } from "@db";
-import { collections, items } from "@db/schema";
+import { collections, items, seeds } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { userInfo } from "os";
 import { uuid } from "drizzle-orm/pg-core";
