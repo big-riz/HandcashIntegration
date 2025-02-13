@@ -10,10 +10,8 @@ import { Loader2 } from "lucide-react";
 export default function MintPage() {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
-    name: "Test NFT",
-    description: "A test NFT item",
-    imageUrl: "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
     tokenSupply: 1,
+    seed: 0,
   });
 
   const mintMutation = useMutation({
@@ -60,36 +58,7 @@ export default function MintPage() {
           <CardTitle>Mint Test Item</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                disabled
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                disabled
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input
-                id="imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                disabled
-              />
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="tokenSupply">Token Supply</Label>
@@ -98,9 +67,19 @@ export default function MintPage() {
                 type="number"
                 value={formData.tokenSupply}
                 onChange={(e) => setFormData(prev => ({ ...prev, tokenSupply: parseInt(e.target.value) }))}
-                disabled
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="seed">Seed</Label>
+              <Input
+                id="seed"
+                type="number"
+                value={formData.seed}
+                onChange={(e) => setFormData(prev => ({ ...prev, seed: parseInt(e.target.value) }))}
+              />
+            </div>
+
 
             <Button 
               type="submit" 
@@ -116,7 +95,6 @@ export default function MintPage() {
                 'Mint Test Item'
               )}
             </Button>
-          </form>
         </CardContent>
       </Card>
     </div>

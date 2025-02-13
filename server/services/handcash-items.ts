@@ -4,6 +4,17 @@ import { db } from "@db";
 import { collections, items } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { userInfo } from "os";
+import { uuid } from "drizzle-orm/pg-core";
+import { randomUUID } from "crypto";
+
+enum SeedEnum {
+  "Fire",
+  "Water",
+  "Earth",
+  "Air",
+  "Light",
+  "Dark"
+}
 
 export interface ItemProps {
   name: string;
@@ -139,6 +150,7 @@ export async function mintItem(
   user: string,
 ) {
   try {
+
     const minterService = new HandCashMinterService();
 
     // Get or create collection
@@ -201,4 +213,20 @@ export async function getUserItems(authToken: string) {
     console.error("Error fetching user items:", error);
     throw new Error("Failed to fetch user items");
   }
+}
+
+export async function makeItemProps(seedEnum: number, tokenSupply: number = 1, name: string = "Test Item", description: string = "Test Description", imageUrl: string = randomUUID()+"_test.png") {
+  await db.insert(seeds).values({
+    imageUrl: imageUrl,
+    seed: seedEnum,
+    initTime: new Date(),
+    active: false,
+    tokenSupply: tokenSupply,
+  })
+  return {
+    name: SeedEnum[seedEnum],
+    description: description,
+    imageUrl: imageUrl,
+    tokenSupply: tokenSupply,
+  } as ItemProps;
 }

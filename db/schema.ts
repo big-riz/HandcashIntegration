@@ -2,12 +2,22 @@ import {
   pgTable,
   text,
   serial,
+  boolean,
   timestamp,
   integer,
   json,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { relations } from "drizzle-orm";
+
+export const seeds = pgTable("seeds", {
+  id: serial("id").primaryKey(),
+  seed: integer("seed").notNull(),
+  imageUrl: text("image_url").notNull(),
+  initTime: timestamp("init_time").defaultNow().notNull(),
+  active: boolean("active").notNull().default(false),
+  tokenSupply: integer("token_supply").notNull().default(1),
+});
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -121,3 +131,9 @@ export const insertItemSchema = createInsertSchema(items);
 export const selectItemSchema = createSelectSchema(items);
 export type InsertItem = typeof items.$inferInsert;
 export type SelectItem = typeof items.$inferSelect;
+
+export const insertSeedSchema = createInsertSchema(seeds);
+export const selectSeedSchema = createSelectSchema(seeds);
+export type InsertSeed = typeof seeds.$inferInsert;
+export type SelectSeed = typeof seeds.$inferSelect;
+

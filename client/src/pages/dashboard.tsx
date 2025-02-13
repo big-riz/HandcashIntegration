@@ -274,14 +274,7 @@ export default function Dashboard() {
                     <DollarSign className="w-4 h-4 mr-2" />
                     Request 1 Cent Payment
                   </Button>
-                  <Button
-                    onClick={handleMintItem}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Mint Test Item
-                  </Button>
+
                 </div>
               </div>
             </CardContent>
@@ -304,14 +297,7 @@ export default function Dashboard() {
             ) : !inventory?.length ? (
               <div className="text-center py-4">
                 <p className="text-gray-500">No items in your inventory</p>
-                <Button
-                  onClick={handleMintItem}
-                  variant="outline"
-                  className="mt-2"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Mint Your First Item
-                </Button>
+
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

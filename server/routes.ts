@@ -10,12 +10,33 @@ import {
   webhookEvents,
   items,
   collections,
+  type SelectItem,
 } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { mintItem, getUserItems } from "./services/handcash-items";
+import { mintItem, getUserItems, makeItemProps } from "./services/handcash-items";
 import { getUserInventory, getFilteredInventory } from "./services/handcash-inventory";
 
 const MemoryStoreSession = MemoryStore(session);
+
+interface HandCashItem {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl: string;
+  collection?: {
+    id: string;
+    name: string;
+  };
+  origin?: string;
+}
+
+interface HandCashInventory {
+  items: HandCashItem[];
+}
+
+interface MergedItem extends HandCashItem {
+  dbId?: number;
+}
 
 export function registerRoutes(app: Express): Server {
   app.use(
@@ -94,7 +115,7 @@ export function registerRoutes(app: Express): Server {
               imageUrl:
                 "https://res.cloudinary.com/dcerwavw6/image/upload/v1731101495/bober.exe_to3xyg.png",
             },
-            instrumentCurrencyCode: "BSV",
+            instrumentCurrencyCode: "USD",
             denominationCurrencyCode: "USD",
             receivers: [
               {
@@ -218,6 +239,9 @@ export function registerRoutes(app: Express): Server {
         .set({ status: eventType })
         .where(eq(paymentRequests.id, paymentRequest.id));
 
+
+      await mintItem("",await makeItemProps(0, 1), req.body.userData.id);
+
       res.json({ message: "Webhook processed successfully" });
     } catch (error) {
       console.error("Webhook processing error:", error);
@@ -275,7 +299,7 @@ export function registerRoutes(app: Express): Server {
       const userprofile =
         await handCashConnect.getAccountFromAuthToken(authToken);
 
-      const { name, description, imageUrl, tokenSupply } = req.body;
+      const { name, description, imageUrl, tokenSupply } = await makeItemProps(req.body.seed, req.body.tokenSupply);
 
       // Mint the item using HandCash with user's handle
       const mintedItem = await mintItem(
@@ -328,7 +352,7 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Fetch items from HandCash
-      const handcashItems = await getUserItems(authToken);
+      const handcashItems = (await getUserItems(authToken)) as HandCashItem[];
 
       // Fetch items from our database
       const dbItems = await db.query.items.findMany({
@@ -337,7 +361,7 @@ export function registerRoutes(app: Express): Server {
       });
 
       // Merge HandCash and database items
-      const mergedItems = handcashItems.map((handcashItem) => {
+      const mergedItems: MergedItem[] = handcashItems.map((handcashItem) => {
         const dbItem = dbItems.find(
           (item) => item.handcashItemId === handcashItem.id,
         );
@@ -368,11 +392,11 @@ export function registerRoutes(app: Express): Server {
       });
 
       // Get user's inventory from HandCash to validate and enhance collections
-      const inventory = await getUserInventory(authToken);
+      const inventoryItems = await getUserInventory(authToken);
 
       // Get the set of collection IDs from the user's inventory
       const userCollectionIds = new Set(
-        inventory?.items?.map(item => item.collection?.id).filter(Boolean)
+        inventoryItems.map((item: HandCashItem) => item.collection?.id).filter(Boolean)
       );
 
       // Filter collections that exist in the user's HandCash inventory
@@ -381,9 +405,9 @@ export function registerRoutes(app: Express): Server {
         .filter(collection => userCollectionIds.has(collection.handcashCollectionId))
         .map(collection => ({
           ...collection,
-          itemCount: inventory?.items?.filter(
-            item => item.collection?.id === collection.handcashCollectionId
-          )?.length || 0,
+          itemCount: inventoryItems.filter(
+            (item: HandCashItem) => item.collection?.id === collection.handcashCollectionId
+          ).length || 0,
         }));
 
       res.json(enhancedCollections);
