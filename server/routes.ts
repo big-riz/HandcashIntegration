@@ -443,8 +443,8 @@ export function registerRoutes(app: Express): Server {
   });
 
   const httpsServer = createServer({
-    key: fs.readFileSync(path.join(__dirname, 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'server.cert'))
+    key: fs.readFileSync(path.join("./", 'server.key')),
+    cert: fs.readFileSync(path.join("./", 'server.cert'))
 }, app)
   return httpsServer;
 }
