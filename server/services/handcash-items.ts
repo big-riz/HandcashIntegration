@@ -217,9 +217,10 @@ export async function getUserItems(authToken: string) {
   }
 }
 
-export async function makeItemProps(seedEnum: number, tokenSupply: number = 1, name: string = "Test Item", description: string = "Test Description", imageUrl: string = process.env.VITE_APP_URL+"/images/"+randomUUID()+"_test.png") {
+export async function makeItemProps(seedEnum: number, tokenSupply: number = 1, name: string = "Test Item", description: string = "Test Description", imageUrl: string = randomUUID()+"_test.png") {
   // copy image from public folder to public folder with filename as imageUrl
   const imagePath = path.join("./", 'public', imageUrl);
+  const imagePath2 = process.env.VITE_APP_URL+"/images/"+imageUrl;
   fs.copyFileSync(path.join("./", 'public', seedEnum+'.png'), imagePath);
   await db.insert(seeds).values({
     imageUrl: imageUrl,
@@ -231,7 +232,7 @@ export async function makeItemProps(seedEnum: number, tokenSupply: number = 1, n
   return {
     name: SeedEnum[seedEnum],
     description: description,
-    imageUrl: imageUrl,
+    imageUrl: imagePath2,
     tokenSupply: tokenSupply,
   } as ItemProps;
 }
