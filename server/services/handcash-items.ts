@@ -6,6 +6,8 @@ import { eq } from "drizzle-orm";
 import { userInfo } from "os";
 import { uuid } from "drizzle-orm/pg-core";
 import { randomUUID } from "crypto";
+import fs from "fs";
+import path from "path";
 
 enum SeedEnum {
   "Fire",
@@ -216,6 +218,9 @@ export async function getUserItems(authToken: string) {
 }
 
 export async function makeItemProps(seedEnum: number, tokenSupply: number = 1, name: string = "Test Item", description: string = "Test Description", imageUrl: string = process.env.VITE_APP_URL+"/images/"+randomUUID()+"_test.png") {
+  // copy image from public folder to public folder with filename as imageUrl
+  const imagePath = path.join("./", 'public', imageUrl);
+  fs.copyFileSync(path.join("./", 'public', seedEnum+'.png'), imagePath);
   await db.insert(seeds).values({
     imageUrl: imageUrl,
     seed: seedEnum,
