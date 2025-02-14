@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "https";
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -41,6 +42,12 @@ interface MergedItem extends HandCashItem {
 }
 
 export function registerRoutes(app: Express): Server {
+
+
+  // set static folder to serve ./public at /images
+  app.use("/images", express.static(path.join("./", 'public')));
+
+
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "handcash-secret",
@@ -55,6 +62,8 @@ export function registerRoutes(app: Express): Server {
       },
     }),
   );
+
+  
 
   app.post("/api/logout", (req, res) => {
     req.session.destroy((err) => {

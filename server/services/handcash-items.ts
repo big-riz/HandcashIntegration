@@ -215,7 +215,7 @@ export async function getUserItems(authToken: string) {
   }
 }
 
-export async function makeItemProps(seedEnum: number, tokenSupply: number = 1, name: string = "Test Item", description: string = "Test Description", imageUrl: string = randomUUID()+"_test.png") {
+export async function makeItemProps(seedEnum: number, tokenSupply: number = 1, name: string = "Test Item", description: string = "Test Description", imageUrl: string = process.env.VITE_APP_URL+"/images/"+randomUUID()+"_test.png") {
   await db.insert(seeds).values({
     imageUrl: imageUrl,
     seed: seedEnum,
